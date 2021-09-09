@@ -1,6 +1,7 @@
 # xo
 > Tic-tac-toe (or Naughts & Crosses) \
-> Written in Typescript, compiles to a single `js` file, see [build](./build).
+> Written in Typescript, compiles to a single `js` file, see [build](./build). \
+> See the [demo](https://serbanghita.github.io/xo/).
 
 
 X wins
