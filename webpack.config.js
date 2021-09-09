@@ -4,7 +4,7 @@ module.exports = {
     entry: "./src/index.ts",
     output: {
         filename: "bundle.js",
-        path: path.resolve(__dirname, "build/js"),
+        path: path.resolve(__dirname, "docs/js"),
         publicPath: "/js/"
     },
 
@@ -12,7 +12,7 @@ module.exports = {
     devtool: "inline-source-map",
 
     devServer: {
-        contentBase: "build",
+        contentBase: "docs",
         watchContentBase: true
     },
 
