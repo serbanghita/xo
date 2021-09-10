@@ -1,6 +1,6 @@
 # xo
 > Tic-tac-toe (or Naughts & Crosses) \
-> Written in Typescript, compiles to a single `js` file, see [build](./build). \
+> Written in Typescript, compiles to a single `js` file, see [docs](./docs). \
 > See the [demo](https://serbanghita.github.io/xo/).
 
 
@@ -14,3 +14,14 @@ Draw
 ![image](https://user-images.githubusercontent.com/1106849/132768124-d4758ab6-47af-4239-b1a7-10000cd825f5.png)
 
 
+#### Install
+
+`npm install`
+
+#### Develop
+
+`npm run dev`
+
+#### Build
+
+`npm run build` - result is visible in [docs](./docs).
