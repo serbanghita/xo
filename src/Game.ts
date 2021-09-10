@@ -169,13 +169,7 @@ export default class Game {
         this.state.roundMovesPerIndex.push(index);
         this.state.boardMatrix[row][column] = this.state.currentPlayer;
 
-        $box.innerText = this.state.currentPlayer === Player.X ? "X" : "O";
-
-        if (this.state.currentPlayer === Player.X) {
-            this.state.currentPlayer = Player.O;
-        } else {
-            this.state.currentPlayer = Player.X;
-        }
+        $box.innerText = this.getCurrentPlayerLabel();
 
         const result = this.checkGameResult();
 
@@ -191,6 +185,13 @@ export default class Game {
             if (this.onFinish) {
                 this.onFinish();
             }
+        }
+
+        // Switch to the next player.
+        if (this.state.currentPlayer === Player.X) {
+            this.state.currentPlayer = Player.O;
+        } else {
+            this.state.currentPlayer = Player.X;
         }
 
 
