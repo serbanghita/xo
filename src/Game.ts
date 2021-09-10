@@ -16,13 +16,13 @@ interface GameState {
     boardMatrix: typeof Game.BOARD_MATRIX,
     roundMovesPerIndex: number[];
     roundMovesPerPlayer: {[Player.X]: [], [Player.O]: []};
-    winner:string;
+    winner: string;
     winningTiles: number[][];
     currentPlayer: Player;
     result: GameResult;
 }
 
-export default class Game {
+export default abstract class Game {
     // Settings.
     public static BOARD_SIZE: number = 3;
     public static BOARD_BOX_SIZE: number = 100;
@@ -33,8 +33,8 @@ export default class Game {
     ];
 
     // Game state.
-    protected state: GameState = {
-        boardMatrix: this.cloneBoard(),
+    public state: GameState = {
+        boardMatrix: Game.cloneBoard(),
         roundMovesPerIndex: [],
         roundMovesPerPlayer: {
             [Player.X]: [],
@@ -46,145 +46,70 @@ export default class Game {
         result: GameResult.PLAYING
     }
 
-    // The scene. DOM reference.
-    private $canvas;
-    private $startBtn;
-    private $announcements;
+    public abstract onInit(): void;
+    public abstract onStart(): void;
+    public abstract onBeforeSelectTile(index, row, column): void;
+    public abstract onAfterSelectTile(index, row, column): void;
+    public abstract onFinish(): void;
+    public abstract onWin(): void;
+    public abstract onDraw(): void;
 
-    public constructor(
-        private readonly onStart?: () => void,
-        private readonly onBeforeMove?: () => void,
-        private readonly onAfterMove?: () => void,
-        private readonly onFinish?: () => void,
-    ) {
-        this.onStart = onStart?.bind(this);
-        this.onBeforeMove = onBeforeMove?.bind(this);
-        this.onAfterMove = onAfterMove?.bind(this);
-        this.onFinish = onFinish?.bind(this);
-    }
-
-    public cloneBoard() {
+    private static cloneBoard() {
         return Game.BOARD_MATRIX.slice(0).map((row) => {
             return row.slice(0);
         });
     }
 
-    private drawStartButton() {
-        const elem = document.createElement("button");
-        elem.style.display = "absolute";
-        elem.innerText = "Re-start game";
-        elem.style.marginTop = "1em";
-        elem.style.userSelect = "none";
-        elem.style.cursor = "pointer";
-
-        this.$startBtn = elem;
-        this.$canvas.appendChild(this.$startBtn);
+    private getRow(tileIndex: number): number {
+        return Math.floor(tileIndex / Game.BOARD_SIZE);
     }
 
-    private drawAnnouncements(text: string) {
-        const elem = document.createElement("div");
-        elem.style.display = "absolute";
-        elem.style.padding = "1em";
-        elem.style.fontStyle = "italics";
-        elem.innerText = text;
-
-        this.$announcements = elem;
-        this.$canvas.appendChild(this.$announcements);
+    private getColumn(tileIndex: number): number {
+        return tileIndex % Game.BOARD_SIZE;
     }
 
-    private removeAnnouncements() {
-        return this.$announcements && this.$announcements.remove();
-    }
+    public selectTile(index: number, row?: number, column?: number) {
 
-    public drawCanvas() {
-
-        this.$canvas = document.createElement("div");
-        this.$canvas.style.boxSizing = "border-box";
-        this.$canvas.style.textAlign = "center";
-        this.$canvas.style.position = "relative";
-        this.$canvas.id = "canvas";
-
-        this.$canvas.style.width = `${Game.BOARD_BOX_SIZE * Game.BOARD_SIZE}px`;
-        this.$canvas.style.height = `${Game.BOARD_BOX_SIZE * Game.BOARD_SIZE}px`;
-
-        for (let i = 0; i < Game.BOARD_SIZE * Game.BOARD_SIZE; i++) {
-            const $box = document.createElement("div");
-            $box.style.float = "left";
-            $box.style.width = `${Game.BOARD_BOX_SIZE}px`;
-            $box.style.height = `${Game.BOARD_BOX_SIZE}px`;
-            $box.style.lineHeight = `${Game.BOARD_BOX_SIZE}px`;
-            $box.style.border = "1px solid black";
-            $box.style.boxShadow = "0 0 0 1px black";
-            $box.style.boxSizing = "border-box";
-            $box.style.fontSize = `${Game.BOARD_BOX_SIZE / 2 }px`;
-            $box.style.cursor = "pointer";
-            $box.style.userSelect = "none";
-            $box.id = `box-${i}`;
-            $box.dataset.index = `${i}`;
-            $box.dataset.row = `${Math.floor(i / Game.BOARD_SIZE)}`;
-            $box.dataset.column = `${i % Game.BOARD_SIZE}`;
-            $box.className = "box";
-
-            this.$canvas.appendChild($box);
-        }
-
-        document.body.appendChild(this.$canvas);
-
-    }
-
-    private bindEvents() {
-        this.$canvas.addEventListener('click', (e) => {
-            if (this.onBeforeMove) {
-                this.onBeforeMove();
-            }
-            this.onBoardBoxClick.bind(this)(e);
-            // Only execute the next callback if the game is not finished.
-            if (this.state.result === GameResult.PLAYING && this.onAfterMove) {
-                this.onAfterMove();
-            }
-        });
-
-        this.$startBtn.addEventListener('click', () => {
-            this.reset();
-            this.resetRender();
-        });
-    }
-
-    private onBoardBoxClick(e: MouseEvent) {
-        const $box = e.target as HTMLElement;
-        // Prevent propagating click callback if:
-        // 1. the DOM element clicked is not a "box".
-        // 2. the "box" already has a value in it.
-        // 3. A player already won the game.
-        if ($box.className !== "box" || $box.innerText !== "" || this.state.result !== GameResult.PLAYING) {
+        if (typeof index !== "number") {
             return false;
         }
 
-        const index = parseInt($box.dataset.index as string, 10);
-        const row = parseInt($box.dataset.row as string, 10);
-        const column = parseInt($box.dataset.column as string, 10);
+        if (index < 0 || index > ((Game.BOARD_SIZE * Game.BOARD_SIZE) - 1)) {
+            return false;
+        }
+
+        if (typeof row === "undefined") {
+            row = this.getRow(index);
+        }
+
+        if (typeof column === "undefined") {
+            column = this.getColumn(index);
+        }
+
+        // Check if tile is already occupied.
+        // Check if game has finished.
+        // If any of the above are true, then stop processing "clicks" on tiles.
+        if (this.state.boardMatrix[row][column] !== Player.NONE || this.state.result !== GameResult.PLAYING) {
+            return false;
+        }
+
+        this.onBeforeSelectTile(index, row, column);
 
         // Store round moves.
         this.state.roundMovesPerPlayer[this.state.currentPlayer].push(index);
         this.state.roundMovesPerIndex.push(index);
         this.state.boardMatrix[row][column] = this.state.currentPlayer;
 
-        $box.innerText = this.getCurrentPlayerLabel();
-
         const result = this.checkGameResult();
 
         if ([GameResult.WIN, GameResult.DRAW].includes(result)) {
             if (result === GameResult.WIN) {
-                this.state.winningTiles.forEach((tileArr) => {
-                    (document.querySelector(`[data-row="${tileArr[0]}"][data-column="${tileArr[1]}"]`) as HTMLElement).style.backgroundColor = "red";
-                });
-                this.drawAnnouncements(`${this.state.winner} has won!`);
+                this.onWin();
             } else if (result === GameResult.DRAW) {
-                this.drawAnnouncements(`It's a draw!`);
+                this.onDraw();
             }
-            if (this.onFinish) {
-                this.onFinish();
-            }
+            this.onFinish();
+
         }
 
         // Switch to the next player.
@@ -194,7 +119,7 @@ export default class Game {
             this.state.currentPlayer = Player.X;
         }
 
-
+        this.onAfterSelectTile(index, row, column);
     }
 
     // Methodology: brute check all rows and columns and diagonals.
@@ -255,33 +180,26 @@ export default class Game {
     }
 
     public start() {
-        this.reset();
-        this.drawCanvas();
-        this.drawStartButton();
-        this.bindEvents();
-        if (this.onStart) {
-            this.onStart();
-        }
+        this.resetState();
+        this.onStart();
+
+        return true;
     }
 
-    public reset() {
-        this.state.winner = "";
-        this.state.winningTiles = [];
-        this.state.roundMovesPerIndex = [];
-        this.state.roundMovesPerPlayer = {
-            [Player.X]: [],
-            [Player.O]: []
+    public resetState() {
+        this.state = {
+            winner: "",
+            winningTiles: [],
+            roundMovesPerIndex: [],
+            roundMovesPerPlayer: {
+                [Player.X]: [],
+                [Player.O]: []
+            },
+            currentPlayer: Player.X,
+            boardMatrix: Game.cloneBoard(),
+            result: GameResult.PLAYING
         };
-        this.state.currentPlayer = Player.X;
-        this.state.boardMatrix = this.cloneBoard();
-        this.state.result = GameResult.PLAYING;
     }
 
-    public resetRender() {
-        this.removeAnnouncements();
-        this.$canvas.querySelectorAll(".box").forEach(($box) => {
-            $box.innerText = "";
-            $box.style.backgroundColor = "";
-        });
-    }
+
 }
