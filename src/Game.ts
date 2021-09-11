@@ -22,6 +22,28 @@ interface GameState {
     result: GameResult;
 }
 
+/**
+ * Example:
+ * GameImpl.ts
+ *      class GameImpl extends Game {
+ *          ...
+ *          onAfterSelectTile(index, row, column) {
+ *              console.log(`It's ${this.getCurrentPlayerLabel()}'s turn`);
+ *          }
+ *          ...
+ *          onFinish() {
+ *              console.log(this.state);
+ *          }
+ *          ...
+ *      }
+ *
+ * index.ts
+ *      const game = new GameImpl();
+ *      game.start();
+ *      game.selectTile(0);
+ *      game.selectTile(5);
+ *      ...
+ */
 export default abstract class Game {
     // Settings.
     public static BOARD_SIZE: number = 3;
@@ -46,6 +68,8 @@ export default abstract class Game {
         result: GameResult.PLAYING
     }
 
+    // Anyone wanting to implement this abstract class implementation of XO
+    // needs to implement these methods in order to have some sort of rendering.
     public abstract onInit(): void;
     public abstract onStart(): void;
     public abstract onBeforeSelectTile(index, row, column): void;
