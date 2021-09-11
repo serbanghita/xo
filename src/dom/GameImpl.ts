@@ -54,12 +54,14 @@ export default class GameImpl extends Game {
     }
 
     onFinish(): void {
+        // @todo: Prevent DOM events from leaking.
     }
 
     onInit(): void {
     }
 
     onStart(): void {
+        // @todo: Is this code better in init?
         const scene = this.scene;
         const api = this;
 
